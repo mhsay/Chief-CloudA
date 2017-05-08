@@ -5,22 +5,22 @@
 
 
 	"Parameters": {
-		"NetworkUrl": {
+		"VPCUrl": {
 			"Default": "https://s3.ap-south-1.amazonaws.com/mhsayed/VPC-Config.json",
-			"Description": "VPC resources",
+			"Description": "VPC Resources",
 			"Type": "String"
 		},
-		"SecHostUrl": {
+		"SecureHostUrl": {
 			"Default": "https://s3.ap-south-1.amazonaws.com/mhsayed/SecureHost.json",
-			"Description": "Secure administrative host",
+			"Description": "Secure Administrative Host",
 			"Type": "String"
 		},
-		"DataUrl": {
+		"RDSMUrl": {
 			"Default": "https://s3.ap-south-1.amazonaws.com/mhsayed/RDS-MySQL.json",
 			"Description": "RDS MySQL Stack",
 			"Type": "String"
 		},
-		"WebUrl": {
+		"APPSUrl": {
 			"Default": "https://s3.ap-south-1.amazonaws.com/mhsayed/APP-Server.json",
 			"Description": "Mybb Web Instance Stack",
 			"Type": "String"
@@ -116,7 +116,7 @@
             "ConstraintDescription" : "Must select a valid SSH Key",
 			"Description": "The SSH key name"
 		},
-		"SecHostInstanceType": {
+		"SecureHostInstanceType": {
 			"Description": "SecHost EC2 instance type",
 			"Type": "String",
 			"Default": "t2.micro",
@@ -320,13 +320,13 @@
 		},
 		"AdminEmail": {
 			"Type": "String",
-			"Default": "Admin@company.com",
+			"Default": "co@example.com",
 			"Description": "Email Address of Administrator"
 		}
 	},
 
 	"Resources": {
-		"NetworkStack": {
+		"VPCStack": {
 			"Type": "AWS::CloudFormation::Stack",
 			"Properties": {
 				"Parameters": {
@@ -362,40 +362,40 @@
 					}
 				},
 				"TemplateURL": {
-					"Ref": "NetworkUrl"
+					"Ref": "VPCUrl"
 				},
 				"TimeoutInMinutes": 15
 			}
 		},
-		"SecHostStack": {
-			"DependsOn": ["NetworkStack"],
+		"SecureHostStack": {
+			"DependsOn": ["VPCStack"],
 			"Type": "AWS::CloudFormation::Stack",
 			"Properties": {
 				"Parameters": {
 					"InstanceType": {
-						"Ref": "SecHostInstanceType"
+						"Ref": "SecureHostInstanceType"
 					},
 					"KeyName": {
 						"Ref": "KeyName"
 					},
-					"SubnetIdForSecHost": {
-						"Fn::GetAtt": ["NetworkStack", "Outputs.PubSubA"]
+					"SubnetIdForSecureHost": {
+						"Fn::GetAtt": ["VPCStack", "Outputs.PubSubA"]
 					},
 					"VpcId": {
-						"Fn::GetAtt": ["NetworkStack", "Outputs.VpcId"]
+						"Fn::GetAtt": ["VPCStack", "Outputs.VpcId"]
 					},
 					"SshAllowCidr": {
 						"Ref": "SshAllowCidr"
 					}
 				},
 				"TemplateURL": {
-					"Ref": "SecHostUrl"
+					"Ref": "SecureHostUrl"
 				},
 				"TimeoutInMinutes": 15
 			}
 		},
-		"DataStack": {
-			"DependsOn": ["SecHostStack"],
+		"RDSMStack": {
+			"DependsOn": ["SecureHostStack"],
 			"Type": "AWS::CloudFormation::Stack",
 			"Properties": {
 				"Parameters": {
@@ -405,12 +405,12 @@
 					"DbAllocatedStorage": {
 						"Ref": "DbAllocatedStorage"
 					},
-					"DataSubnetIds": {"Fn::Join" : [ ",", [{ "Fn::GetAtt": ["NetworkStack", "Outputs.PrivSubD"]},
-                    { "Fn::GetAtt": ["NetworkStack", "Outputs.PrivSubE"]},
-                      { "Fn::GetAtt": ["NetworkStack", "Outputs.PrivSubF"]}]] },
+					"DataSubnetIds": {"Fn::Join" : [ ",", [{ "Fn::GetAtt": ["VPCStack", "Outputs.PrivSubD"]},
+                    { "Fn::GetAtt": ["VPCStack", "Outputs.PrivSubE"]},
+                      { "Fn::GetAtt": ["VPCStack", "Outputs.PrivSubF"]}]] },
 
 					"VpcId": {
-						"Fn::GetAtt": ["NetworkStack", "Outputs.VpcId"]
+						"Fn::GetAtt": ["VPCStack", "Outputs.VpcId"]
 					},
 					"MasterUsername": {
 						"Ref": "MasterUsername"
@@ -420,14 +420,14 @@
 					}
 				},
 				"TemplateURL": {
-					"Ref": "DataUrl"
+					"Ref": "RDSMUrl"
 				},
 				"TimeoutInMinutes": 15
 			}
 		},
-		"WebStack": {
+		"APPStack": {
 			"Type": "AWS::CloudFormation::Stack",
-			"DependsOn": ["DataStack"],
+			"DependsOn": ["RDSMStack"],
 			"Properties": {
 				"Parameters": {
 					"InstanceType": {
@@ -439,26 +439,26 @@
 					"ServerCount": {
 						"Ref": "ServerCount"
 					},
-					"WebSubnetIds": {"Fn::Join" : [ ",", [{ "Fn::GetAtt": ["NetworkStack", "Outputs.PrivSubA"]},
-                    { "Fn::GetAtt": ["NetworkStack", "Outputs.PrivSubB"]},
-                      { "Fn::GetAtt": ["NetworkStack", "Outputs.PrivSubC"]}]] },
-                    "PublicSubnetIds": {"Fn::Join" : [ ",", [{ "Fn::GetAtt": ["NetworkStack", "Outputs.PubSubA"]},
-                    { "Fn::GetAtt": ["NetworkStack", "Outputs.PubSubB"]},
-                      { "Fn::GetAtt": ["NetworkStack", "Outputs.PubSubC"]}]] },
+					"WebSubnetIds": {"Fn::Join" : [ ",", [{ "Fn::GetAtt": ["VPCStack", "Outputs.PrivSubA"]},
+                    { "Fn::GetAtt": ["VPCStack", "Outputs.PrivSubB"]},
+                      { "Fn::GetAtt": ["VPCStack", "Outputs.PrivSubC"]}]] },
+                    "PublicSubnetIds": {"Fn::Join" : [ ",", [{ "Fn::GetAtt": ["VPCStack", "Outputs.PubSubA"]},
+                    { "Fn::GetAtt": ["VPCStack", "Outputs.PubSubB"]},
+                      { "Fn::GetAtt": ["VPCStack", "Outputs.PubSubC"]}]] },
 					"VpcId": {
-						"Fn::GetAtt": ["NetworkStack", "Outputs.VpcId"]
+						"Fn::GetAtt": ["VPCStack", "Outputs.VpcId"]
 					},
 					"WebHttpsAllowCidr": {
 						"Ref": "WebHttpsAllowCidr"
 					},
 					"SshSecurityGroup": {
-						"Fn::GetAtt": ["SecHostStack", "Outputs.SecHostClientSg"]
+						"Fn::GetAtt": ["SecureHostStack", "Outputs.SecHostClientSg"]
 					},
 					"DbSecurityGroup": {
-						"Fn::GetAtt": ["DataStack", "Outputs.DbSecurityGroup"]
+						"Fn::GetAtt": ["RDSMStack", "Outputs.DbSecurityGroup"]
 					},
 					"DbHost": {
-						"Fn::GetAtt": ["DataStack", "Outputs.RdsEndpoint"]
+						"Fn::GetAtt": ["RDSMStack", "Outputs.RdsEndpoint"]
 					},
 					"DbUser": {
 						"Ref": "MasterUsername"
@@ -474,7 +474,7 @@
 					}
 				},
 				"TemplateURL": {
-					"Ref": "WebUrl"
+					"Ref": "APPSUrl"
 				},
 				"TimeoutInMinutes": 15
 			}
@@ -484,24 +484,24 @@
 		"ApplicationEndpoint": {
 			"Description": "Application Endpoint",
 			"Value": {
-				"Fn::GetAtt": ["WebStack", "Outputs.DnsName"]
+				"Fn::GetAtt": ["APPStack", "Outputs.DnsName"]
 			}
 		},
-      "NetworkStackOut": {
-			"Description": "Network Stack ID",
-			"Value": {"Ref": "NetworkStack"}
+      "VPCStackOut": {
+			"Description": "VPC Stack ID",
+			"Value": {"Ref": "VPCStack"}
 		},
-      "SecHostStackOut": {
-			"Description": "Jump Box Stack ID",
-			"Value": { "Ref": "SecHostStack" }
+      "SecureHostStackOut": {
+			"Description": "Secure Host Stack ID",
+			"Value": { "Ref": "SecureHostStack" }
 		},
-      "DataStackOut": {
-			"Description": "Data Stack ID",
-			"Value": { "Ref": "DataStack" }
+      "RDSMStackOut": {
+			"Description": "RDS MySQL Stack ID",
+			"Value": { "Ref": "RDSMStack" }
 		},
-      "WebStackOut": {
-			"Description": "Web Stack ID",
-			"Value": { "Ref": "WebStack" }
+      "APPStackOut": {
+			"Description": "Web Server Stack ID",
+			"Value": { "Ref": "APPStack" }
 		}
 		}
 	}

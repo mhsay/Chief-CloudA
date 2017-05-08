@@ -1,0 +1,686 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "This template builds web tier for MyBB",
+  "Parameters": {
+    "InstanceType": {
+      "Description": "Web Tier EC2 instance type",
+      "Type": "String",
+      "Default": "t2.micro",
+      "AllowedValues": [
+        "t1.micro",
+        "t2.nano",
+        "t2.micro",
+        "t2.small",
+        "t2.medium",
+        "t2.large",
+        "m1.small",
+        "m1.medium",
+        "m1.large",
+        "m1.xlarge",
+        "m2.xlarge",
+        "m2.2xlarge",
+        "m2.4xlarge",
+        "m3.medium",
+        "m3.large",
+        "m3.xlarge",
+        "m3.2xlarge",
+        "m4.large",
+        "m4.xlarge",
+        "m4.2xlarge",
+        "m4.4xlarge",
+        "m4.10xlarge",
+        "c1.medium",
+        "c1.xlarge",
+        "c3.large",
+        "c3.xlarge",
+        "c3.2xlarge",
+        "c3.4xlarge",
+        "c3.8xlarge",
+        "c4.large",
+        "c4.xlarge",
+        "c4.2xlarge",
+        "c4.4xlarge",
+        "c4.8xlarge",
+        "g2.2xlarge",
+        "g2.8xlarge",
+        "r3.large",
+        "r3.xlarge",
+        "r3.2xlarge",
+        "r3.4xlarge",
+        "r3.8xlarge",
+        "i2.xlarge",
+        "i2.2xlarge",
+        "i2.4xlarge",
+        "i2.8xlarge",
+        "d2.xlarge",
+        "d2.2xlarge",
+        "d2.4xlarge",
+        "d2.8xlarge",
+        "hi1.4xlarge",
+        "hs1.8xlarge",
+        "cr1.8xlarge",
+        "cc2.8xlarge",
+        "cg1.4xlarge"
+      ]
+    },
+    "KeyName": {
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Description": "The SSH key name"
+    },
+    "ServerCount": {
+      "Type": "String",
+      "Description": "Amount of instances to set initial scaling group to"
+    },
+    "WebSubnetIds": {
+      "Type": "List<AWS::EC2::Subnet::Id>",
+      "Description": "Web Subnet IDs"
+    },
+    "PublicSubnetIds": {
+      "Type": "List<AWS::EC2::Subnet::Id>",
+      "Description": "Public Subnet IDs"
+    },
+    "InstanceName": {
+      "Type": "String",
+      "Description": "Name tag to use for the Web Instance.",
+      "Default": "WebServer"
+    },
+    "VpcId": {
+      "Type": "AWS::EC2::VPC::Id",
+      "Description": "The VPC ID holding Subnets specified above."
+    },
+   "WebHttpsAllowCidr": {
+     "Description": "Network block (CIDR) to allow HTTPS access for application, Default: World.",
+     "Default": "0.0.0.0/0",
+     "MinLength": "9",
+     "MaxLength": "18",
+     "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+     "Type": "String"
+   },
+    "SshSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup::Id",
+      "Description": "Client SSH SG"
+    },
+    "DbSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup::Id",
+      "Description": "Client DB SG"
+    },
+    "DbName": {
+      "Type": "String",
+      "Default": "mybbdb",
+      "Description": "Database Name"
+    },
+    "DbHost": {
+      "Type": "String",
+      "Description": "Database Host Endpoint"
+    },
+    "DbPort": {
+      "Type": "String",
+      "Default": "3306",
+      "Description": "Database Port"
+    },
+    "DbUser": {
+      "Type": "String",
+      "Default": "dbadmin",
+      "Description": "Database Username"
+    },
+    "DbPass": {
+      "NoEcho": "true",
+      "Type": "String",
+      "Description": "Database Password"
+    },
+    "AdminEmail": {
+      "Type": "String",
+      "Default": "Admin@company.com",
+      "Description": "Email Address of Administrator"
+    },
+    "DatadogApiKey": {
+      "Default": "1a713ba658695272bc429eb16aef13cd",
+      "Description": "Datadog Agent API Key",
+      "Type": "String"
+    }
+  },
+  "Mappings" : {
+    "AWSInstanceType2Arch" : {
+      "t1.micro"    : { "Arch" : "PV64"   },
+      "t2.micro"    : { "Arch" : "HVM64"  },
+      "t2.small"    : { "Arch" : "HVM64"  },
+      "t2.medium"   : { "Arch" : "HVM64"  },
+      "m1.small"    : { "Arch" : "PV64"   },
+      "m1.medium"   : { "Arch" : "PV64"   },
+      "m1.large"    : { "Arch" : "PV64"   },
+      "m1.xlarge"   : { "Arch" : "PV64"   },
+      "m2.xlarge"   : { "Arch" : "PV64"   },
+      "m2.2xlarge"  : { "Arch" : "PV64"   },
+      "m2.4xlarge"  : { "Arch" : "PV64"   },
+      "m3.medium"   : { "Arch" : "HVM64"  },
+      "m3.large"    : { "Arch" : "HVM64"  },
+      "m3.xlarge"   : { "Arch" : "HVM64"  },
+      "m3.2xlarge"  : { "Arch" : "HVM64"  },
+      "c1.medium"   : { "Arch" : "PV64"   },
+      "c1.xlarge"   : { "Arch" : "PV64"   },
+      "c3.large"    : { "Arch" : "HVM64"  },
+      "c3.xlarge"   : { "Arch" : "HVM64"  },
+      "c3.2xlarge"  : { "Arch" : "HVM64"  },
+      "c3.4xlarge"  : { "Arch" : "HVM64"  },
+      "c3.8xlarge"  : { "Arch" : "HVM64"  },
+      "g2.2xlarge"  : { "Arch" : "HVMG2"  },
+      "r3.large"    : { "Arch" : "HVM64"  },
+      "r3.xlarge"   : { "Arch" : "HVM64"  },
+      "r3.2xlarge"  : { "Arch" : "HVM64"  },
+      "r3.4xlarge"  : { "Arch" : "HVM64"  },
+      "r3.8xlarge"  : { "Arch" : "HVM64"  },
+      "i2.xlarge"   : { "Arch" : "HVM64"  },
+      "i2.2xlarge"  : { "Arch" : "HVM64"  },
+      "i2.4xlarge"  : { "Arch" : "HVM64"  },
+      "i2.8xlarge"  : { "Arch" : "HVM64"  },
+      "hi1.4xlarge" : { "Arch" : "HVM64"  },
+      "hs1.8xlarge" : { "Arch" : "HVM64"  },
+      "cr1.8xlarge" : { "Arch" : "HVM64"  },
+      "cc2.8xlarge" : { "Arch" : "HVM64"  }
+    },
+
+    "AWSRegionArch2AMI" : {
+      "us-east-1"      : { "PV64" : "ami-50842d38", "HVM64" : "ami-08842d60", "HVMG2" : "ami-3a329952"  },
+      "us-west-2"      : { "PV64" : "ami-af86c69f", "HVM64" : "ami-8786c6b7", "HVMG2" : "ami-47296a77"  },
+      "us-west-1"      : { "PV64" : "ami-c7a8a182", "HVM64" : "ami-cfa8a18a", "HVMG2" : "ami-331b1376"  },
+      "eu-west-1"      : { "PV64" : "ami-aa8f28dd", "HVM64" : "ami-748e2903", "HVMG2" : "ami-00913777"  },
+      "ap-southeast-1" : { "PV64" : "ami-20e1c572", "HVM64" : "ami-d6e1c584", "HVMG2" : "ami-fabe9aa8"  },
+      "ap-northeast-1" : { "PV64" : "ami-21072820", "HVM64" : "ami-35072834", "HVMG2" : "ami-5dd1ff5c"  },
+      "ap-southeast-2" : { "PV64" : "ami-8b4724b1", "HVM64" : "ami-fd4724c7", "HVMG2" : "ami-e98ae9d3"  },
+      "sa-east-1"      : { "PV64" : "ami-9d6cc680", "HVM64" : "ami-956cc688", "HVMG2" : "NOT_SUPPORTED" },
+      "cn-north-1"     : { "PV64" : "ami-a857c591", "HVM64" : "ami-ac57c595", "HVMG2" : "NOT_SUPPORTED" },
+      "eu-central-1"   : { "PV64" : "ami-a03503bd", "HVM64" : "ami-b43503a9", "HVMG2" : "ami-b03503ad"  }
+    }
+  },
+  "Resources": {
+    "WebSecurityGroup": {
+        "Type": "AWS::EC2::SecurityGroup",
+        "Properties": {
+          "Tags": [
+            {
+              "Key": "Name",
+              "Value": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    "SG",
+                    "ELB",
+                    "Web",
+                    "HTTPS"
+                  ]
+                ]
+              }
+            }
+          ],
+          "GroupDescription": "HTTPS Access to Web Tier",
+          "VpcId": {
+            "Ref": "VpcId"
+          },
+          "SecurityGroupIngress": [
+            {
+              "IpProtocol": "tcp",
+              "ToPort": "443",
+              "FromPort": "443",
+              "CidrIp": {
+                "Ref": "WebHttpsAllowCidr"
+              }
+            },
+            {
+              "IpProtocol": "tcp",
+              "ToPort": "80",
+              "FromPort": "80",
+              "CidrIp": {
+                "Ref": "WebHttpsAllowCidr"
+              }
+            }
+          ]
+        }
+      },
+    "WebInstanceSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "DependsOn": ["WebSecurityGroup"],
+      "Properties": {
+        "GroupDescription": "Local security group for Web Tier",
+        "VpcId": {
+          "Ref": "VpcId"
+        },
+        "SecurityGroupIngress": [
+          {
+            "FromPort": "80",
+            "ToPort": "80",
+            "IpProtocol": "tcp",
+            "SourceSecurityGroupId": {
+              "Ref": "WebSecurityGroup"
+            }
+          },
+          {
+            "FromPort": "443",
+            "ToPort": "443",
+            "IpProtocol": "tcp",
+            "SourceSecurityGroupId": {
+              "Ref": "WebSecurityGroup"
+            }
+          }
+        ]
+      }
+    },
+    "WebElasticLoadBalancer": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "DependsOn": ["WebSecurityGroup"],
+      "Properties": {
+        "CrossZone": "true",
+        "SecurityGroups": [
+          {
+            "Ref": "WebSecurityGroup"
+          }
+        ],
+        "Subnets": {
+          "Ref": "PublicSubnetIds"
+        },
+        "LBCookieStickinessPolicy": [
+          {
+            "PolicyName": "CookieBasedPolicy",
+            "CookieExpirationPeriod": "35"
+          }
+        ],
+        "Listeners": [
+          {
+            "LoadBalancerPort": "80",
+            "InstancePort": "80",
+            "Protocol": "HTTP",
+            "PolicyNames": [
+              "CookieBasedPolicy"
+            ]
+          }
+        ],
+        "HealthCheck": {
+          "Target": "HTTP:80/",
+          "HealthyThreshold": "3",
+          "UnhealthyThreshold": "5",
+          "Interval": "30",
+          "Timeout": "15"
+        }
+      }
+    },
+    "WebServerAsg": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {"Ref": "InstanceName"},
+            "PropagateAtLaunch": "true"
+          }
+        ],
+        "AvailabilityZones": [
+          {
+            "Fn::Select": [
+              "0",
+              {
+                "Fn::GetAZs": ""
+              }
+            ]
+          },
+          {
+            "Fn::Select": [
+              "1",
+              {
+                "Fn::GetAZs": ""
+              }
+            ]
+          },
+          {
+            "Fn::Select": [
+              "2",
+              {
+                "Fn::GetAZs": ""
+              }
+            ]
+          }
+        ],
+        "VPCZoneIdentifier": {
+          "Ref": "WebSubnetIds"
+        },
+        "LaunchConfigurationName": {
+          "Ref": "WebServerLaunchConfig"
+        },
+        "MinSize": "1",
+        "MaxSize": "10",
+        "DesiredCapacity": {
+          "Ref": "ServerCount"
+        },
+        "LoadBalancerNames": [
+          {
+            "Ref": "WebElasticLoadBalancer"
+          }
+        ]
+      },
+      "CreationPolicy": {
+        "ResourceSignal": {
+          "Timeout": "PT10M",
+          "Count": {
+            "Ref": "ServerCount"
+          }
+        }
+      },
+      "UpdatePolicy": {
+        "AutoScalingRollingUpdate": {
+          "MinInstancesInService": "1",
+          "MaxBatchSize": "1",
+          "PauseTime": "PT15M",
+          "WaitOnResourceSignals": "true"
+        }
+      },
+      "DependsOn": [
+        "WebElasticLoadBalancer",
+        "WebServerLaunchConfig"
+      ]
+    },
+    "WebServerScaleUpPolicy": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "AdjustmentType": "ChangeInCapacity",
+        "AutoScalingGroupName": {
+          "Ref": "WebServerAsg"
+        },
+        "Cooldown": "60",
+        "ScalingAdjustment": "1"
+      }
+    },
+    "WebServerScaleDownPolicy": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "AdjustmentType": "ChangeInCapacity",
+        "AutoScalingGroupName": {
+          "Ref": "WebServerAsg"
+        },
+        "Cooldown": "60",
+        "ScalingAdjustment": "-1"
+      }
+    },
+    "DiskReadIOPSAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": "Webservers Network Out",
+        "Namespace": "AWS/EC2",
+        "MetricName": "NetworkOut",
+        "Dimensions": [
+          {
+            "Name": "AutoScalingGroupName",
+            "Value": {
+              "Ref": "WebServerAsg"
+            }
+          }
+        ],
+        "Statistic": "Average",
+        "Period": "600",
+        "EvaluationPeriods": "1",
+        "Threshold": "1000000000",
+        "ComparisonOperator": "GreaterThanThreshold"
+      }
+    },
+    "CPUAlarmHigh": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": "Scale-up if CPU > 80% for 5 minutes",
+        "MetricName": "CPUUtilization",
+        "Namespace": "AWS/EC2",
+        "Statistic": "Average",
+        "Period": "300",
+        "EvaluationPeriods": "1",
+        "Threshold": "80",
+        "AlarmActions": [
+          {
+            "Ref": "WebServerScaleUpPolicy"
+          }
+        ],
+        "Dimensions": [
+          {
+            "Name": "AutoScalingGroupName",
+            "Value": {
+              "Ref": "WebServerAsg"
+            }
+          }
+        ],
+        "ComparisonOperator": "GreaterThanThreshold"
+      }
+    },
+    "CPUAlarmLow": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": "Scale-down if CPU < 40% for 10 minutes",
+        "MetricName": "CPUUtilization",
+        "Namespace": "AWS/EC2",
+        "Statistic": "Average",
+        "Period": "300",
+        "EvaluationPeriods": "2",
+        "Threshold": "40",
+        "AlarmActions": [
+          {
+            "Ref": "WebServerScaleDownPolicy"
+          }
+        ],
+        "Dimensions": [
+          {
+            "Name": "AutoScalingGroupName",
+            "Value": {
+              "Ref": "WebServerAsg"
+            }
+          }
+        ],
+        "ComparisonOperator": "LessThanThreshold"
+      }
+    },
+    "WebServerLaunchConfig": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Metadata": {
+        "AWS::CloudFormation::Init": {
+          "config": {
+            "packages": {
+              "yum": {
+                "httpd": [],
+                "php": [],
+                "php-mysql": [],
+                "php-gd": [],
+                "mysql": []
+              }
+            },
+            "sources": {
+              "/tmp/deployment": "https://github.com/mhsay/Chief-CloudA/tarball/master"
+            },
+            "files": {
+              "/etc/cfn/cfn-hup.conf": {
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "[main]\n",
+                      "stack=",
+                      {
+                        "Ref": "AWS::StackId"
+                      },
+                      "\n",
+                      "region=",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "\n"
+                    ]
+                  ]
+                },
+                "mode": "000400",
+                "owner": "root",
+                "group": "root"
+              },
+              "/etc/cfn/hooks.d/cfn-auto-reloader.conf": {
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "[cfn-auto-reloader-hook]\n",
+                      "triggers=post.update\n",
+                      "path=Resources.WebServerLaunchConfig.Metadata.AWS::CloudFormation::Init\n",
+                      "action=/opt/aws/bin/cfn-init -v ",
+                      "         --stack ",
+                      {
+                        "Ref": "AWS::StackName"
+                      },
+                      "         --resource WebServerLaunchConfig ",
+                      "         --region ",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "\n",
+                      "runas=root\n"
+                    ]
+                  ]
+                }
+              },
+              "/tmp/solo.rb": {
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "file_cache_path \"/etc/chef\"\n",
+                      "cookbook_path \"/etc/chef/cookbooks\""
+                    ]
+                  ]
+                },
+                "mode": "000400",
+                "owner": "root",
+                "group": "root"
+              },
+              "/tmp/deployment.json": {
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "{\"mybb\": \n",
+                      "{\"dnsname\": \"",
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "http://",
+                            {
+                              "Fn::GetAtt": [
+                                "WebElasticLoadBalancer",
+                                "DNSName"
+                              ]
+                            }
+                          ]
+                        ]
+                      },
+                      "\", \"admin_email\": \"",
+                      {
+                        "Ref": "AdminEmail"
+                      },
+                      "\", \"dbname\": \"",
+                      {
+                        "Ref": "DbName"
+                      },
+                      "\", \"dbhost\": \"",
+                      {
+                        "Ref": "DbHost"
+                      },
+                      "\", \"dbport\": \"",
+                      {
+                        "Ref": "DbPort"
+                      },
+                      "\", \"dbuser\": \"",
+                      {
+                        "Ref": "DbUser"
+                      },
+                      "\", \"dbpass\": \"",
+                      {
+                        "Ref": "DbPass"
+                      },
+                      "\"},",
+                      "\"datadog\": {\"apikey\": \"",
+                      {
+                        "Ref": "DatadogApiKey"
+                      },
+                      "\"},",
+                      "\"run_list\": [ \"recipe[mybb::default]\", \"recipe[datadog::default]\" ]}"
+                    ]
+                  ]
+                },
+                "mode": "000400",
+                "owner": "root",
+                "group": "root"
+              }
+            }
+          }
+        }
+      },
+        "Properties": {
+          "ImageId": { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
+                          { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "InstanceType" }, "Arch" ] } ] },
+          "SecurityGroups": [
+            {
+              "Ref": "WebInstanceSecurityGroup"
+            },
+            {
+              "Ref": "SshSecurityGroup"
+            },
+            {
+              "Ref": "DbSecurityGroup"
+            }
+          ],
+          "InstanceType": {
+            "Ref": "InstanceType"
+          },
+          "KeyName": {
+            "Ref": "KeyName"
+          },
+          "AssociatePublicIpAddress": "false",
+          "UserData": {
+            "Fn::Base64": {
+              "Fn::Join": [
+                "",
+                [
+                  "#!/bin/bash -xe\n",
+                  "yum update -y aws-cfn-bootstrap\n",
+                  "# Install \n",
+                  "/opt/aws/bin/cfn-init -v ",
+                  "    --stack ",
+                  {
+                    "Ref": "AWS::StackId"
+                  },
+                  "    --resource WebServerLaunchConfig ",
+                  "    --region ",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  "\n",
+                  "# Run \n",
+                  "/bin/mkdir -p /etc/chef && /bin/cp -r /tmp/deployment/cookbooks /etc/chef\n",
+                  "/usr/bin/curl -L https://www.opscode.com/chef/install.sh | bash\n",
+                  "/usr/bin/chef-solo -c /tmp/solo.rb -j /tmp/deployment.json\n",
+                  "\n",
+                  "# Signal \n",
+                  "/opt/aws/bin/cfn-signal -e $? ",
+                  "    --stack ",
+                  {
+                    "Ref": "AWS::StackId"
+                  },
+                  "    --resource WebServerAsg ",
+                  "    --region ",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  "\n"
+                ]
+              ]
+            }
+          }
+        }
+      }
+    },
+  "Outputs" : {
+    "DnsName": {
+      "Description": "Application HTTP Address",
+      "Value": { "Fn::GetAtt": [ "WebElasticLoadBalancer", "DNSName" ] }
+    }
+  }
+}

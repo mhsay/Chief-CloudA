@@ -1,0 +1,143 @@
+
+ {
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "This template builds Data Tier for MyBB",
+
+
+  "Parameters" : {
+    "DbInstanceClass": {
+      "Description": "RDS Instance Type",
+      "Type": "String",
+      "Default": "db.t1.micro",
+      "AllowedValues": [
+        "db.t1.micro",
+        "db.m1.small",
+        "db.m1.medium",
+        "db.m1.large",
+        "db.m1.xlarge",
+        "db.m2.xlarge",
+        "db.m2.2xlarge",
+        "db.m2.4xlarge",
+        "db.m3.medium",
+        "db.m3.large",
+        "db.m3.xlarge",
+        "db.m3.2xlarge",
+        "db.m4.large",
+        "db.m4.xlarge",
+        "db.m4.2xlarge",
+        "db.m4.4xlarge",
+        "db.m4.10xlarge",
+        "db.r3.large",
+        "db.r3.xlarge",
+        "db.r3.2xlarge",
+        "db.r3.4xlarge",
+        "db.r3.8xlarge",
+        "db.m2.xlarge",
+        "db.m2.2xlarge",
+        "db.m2.4xlarge",
+        "db.cr1.8xlarge",
+        "db.t2.micro",
+        "db.t2.small",
+        "db.t2.medium",
+        "db.t2.large"
+      ]
+    },
+    "DbAllocatedStorage": {
+      "Default": "5",
+      "Description": "DB Size in GB",
+      "Type": "Number",
+      "MinValue": "5",
+      "MaxValue": "1024"
+    },
+    "DbName": {
+      "Default": "mybbdb",
+      "Description": "The MyBB database name",
+      "Type": "String"
+    },
+    "DataSubnetIds": {
+      "Type": "List<AWS::EC2::Subnet::Id>",
+      "Description": "Data Tier Subnet Ids"
+    },
+    "MasterUsername": {
+      "Default": "dbadmin",
+      "Description": "Database Admin Username",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "16",
+      "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*"
+    },
+    "MasterPassword": {
+      "NoEcho": "true",
+      "Description": "Database Admin Password",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "41",
+      "AllowedPattern": "[a-zA-Z0-9]+"
+    },
+    "VpcId": {
+      "Type": "AWS::EC2::VPC::Id",
+      "Description": "The VPC ID holding Subnets specified above."
+    }
+  },
+
+  "Resources" : {
+
+    "DatabaseSecurityGroup": {
+          "Type": "AWS::EC2::SecurityGroup",
+          "Properties" : {
+            "GroupDescription": "Database Security Group",
+            "VpcId" : { "Ref" : "VpcId" }
+          }
+        },
+    "DatabaseSecurityGroupIngress": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "DependsOn": ["DatabaseSecurityGroup"],
+      "Properties": {
+        "GroupId": {
+          "Ref": "DatabaseSecurityGroup"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "3306",
+        "ToPort": "3306",
+        "SourceSecurityGroupId": {
+          "Ref": "DatabaseSecurityGroup"
+        }
+      }
+    },
+
+    "DbSubnetGroup" : {
+      "Type" : "AWS::RDS::DBSubnetGroup",
+      "Properties" : {
+        "DBSubnetGroupDescription" : "Database Subnet Group.",
+        "SubnetIds" : { "Ref": "DataSubnetIds" }
+      }
+    },
+
+    "MysqlRdsInstance": {
+      "Type": "AWS::RDS::DBInstance",
+      "Properties": {
+        "AllocatedStorage": { "Ref" : "DbAllocatedStorage" },
+        "DBInstanceClass": { "Ref" : "DbInstanceClass" },
+        "DBName" : { "Ref": "DbName" },
+        "DBSubnetGroupName" : { "Ref" : "DbSubnetGroup" },
+        "Engine" : "MySQL",
+        "MultiAZ" : "true",
+        "MasterUsername": { "Ref": "MasterUsername" },
+        "MasterUserPassword": { "Ref" : "MasterPassword" },
+        "VPCSecurityGroups" : [ { "Ref": "DatabaseSecurityGroup" } ]
+      },
+      "DependsOn": [ "DbSubnetGroup", "DatabaseSecurityGroup"]
+    }
+  },
+  "Outputs" : {
+    "RdsEndpoint": {
+      "Description": "RDS Endpoint",
+      "Value": { "Fn::GetAtt": [ "MysqlRdsInstance", "Endpoint.Address" ] }
+    },
+    "DbSecurityGroup": {
+      "Description": "DB SG ID",
+      "Value": { "Fn::GetAtt": [ "DatabaseSecurityGroup", "GroupId" ] }
+    }
+  }
+}

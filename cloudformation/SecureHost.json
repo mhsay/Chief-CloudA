@@ -1,0 +1,413 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "This template builds the minimum functionality required to offer a functional Secure Host",
+  "Parameters": {
+    "InstanceType": {
+      "Description": "Secure host EC2 instance type",
+      "Type": "String",
+      "Default": "t2.micro",
+      "AllowedValues": [
+        "t1.micro",
+        "t2.nano",
+        "t2.micro",
+        "t2.small",
+        "t2.medium",
+        "t2.large",
+        "m1.small",
+        "m1.medium",
+        "m1.large",
+        "m1.xlarge",
+        "m2.xlarge",
+        "m2.2xlarge",
+        "m2.4xlarge",
+        "m3.medium",
+        "m3.large",
+        "m3.xlarge",
+        "m3.2xlarge",
+        "m4.large",
+        "m4.xlarge",
+        "m4.2xlarge",
+        "m4.4xlarge",
+        "m4.10xlarge",
+        "c1.medium",
+        "c1.xlarge",
+        "c3.large",
+        "c3.xlarge",
+        "c3.2xlarge",
+        "c3.4xlarge",
+        "c3.8xlarge",
+        "c4.large",
+        "c4.xlarge",
+        "c4.2xlarge",
+        "c4.4xlarge",
+        "c4.8xlarge",
+        "g2.2xlarge",
+        "g2.8xlarge",
+        "r3.large",
+        "r3.xlarge",
+        "r3.2xlarge",
+        "r3.4xlarge",
+        "r3.8xlarge",
+        "i2.xlarge",
+        "i2.2xlarge",
+        "i2.4xlarge",
+        "i2.8xlarge",
+        "d2.xlarge",
+        "d2.2xlarge",
+        "d2.4xlarge",
+        "d2.8xlarge",
+        "hi1.4xlarge",
+        "hs1.8xlarge",
+        "cr1.8xlarge",
+        "cc2.8xlarge",
+        "cg1.4xlarge"
+      ]
+    },
+    "KeyName": {
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Description": "The SSH key name"
+    },
+    "SubnetIdForSecureHost": {
+      "Type": "AWS::EC2::Subnet::Id",
+      "Description": "Public Subnet ID"
+    },
+    "InstanceName": {
+      "Type": "String",
+      "Description": "Name tag to use for the Secure Host Host.",
+      "Default": "Secure-Host"
+    },
+    "VpcId": {
+      "Type": "AWS::EC2::VPC::Id",
+      "Description": "The VPC ID holding Subnets specified above."
+    },
+    "SshAllowCidr": {
+      "Type": "String",
+      "Description": "Source SG for Secure Host"
+    }
+  },
+  "Mappings": {
+    "AWSInstanceType2Arch": {
+      "t1.micro": {
+        "Arch": "PV64"
+      },
+      "t2.micro": {
+        "Arch": "HVM64"
+      },
+      "t2.small": {
+        "Arch": "HVM64"
+      },
+      "t2.medium": {
+        "Arch": "HVM64"
+      },
+      "m1.small": {
+        "Arch": "PV64"
+      },
+      "m1.medium": {
+        "Arch": "PV64"
+      },
+      "m1.large": {
+        "Arch": "PV64"
+      },
+      "m1.xlarge": {
+        "Arch": "PV64"
+      },
+      "m2.xlarge": {
+        "Arch": "PV64"
+      },
+      "m2.2xlarge": {
+        "Arch": "PV64"
+      },
+      "m2.4xlarge": {
+        "Arch": "PV64"
+      },
+      "m3.medium": {
+        "Arch": "HVM64"
+      },
+      "m3.large": {
+        "Arch": "HVM64"
+      },
+      "m3.xlarge": {
+        "Arch": "HVM64"
+      },
+      "m3.2xlarge": {
+        "Arch": "HVM64"
+      },
+      "c1.medium": {
+        "Arch": "PV64"
+      },
+      "c1.xlarge": {
+        "Arch": "PV64"
+      },
+      "c3.large": {
+        "Arch": "HVM64"
+      },
+      "c3.xlarge": {
+        "Arch": "HVM64"
+      },
+      "c3.2xlarge": {
+        "Arch": "HVM64"
+      },
+      "c3.4xlarge": {
+        "Arch": "HVM64"
+      },
+      "c3.8xlarge": {
+        "Arch": "HVM64"
+      },
+      "g2.2xlarge": {
+        "Arch": "HVMG2"
+      },
+      "r3.large": {
+        "Arch": "HVM64"
+      },
+      "r3.xlarge": {
+        "Arch": "HVM64"
+      },
+      "r3.2xlarge": {
+        "Arch": "HVM64"
+      },
+      "r3.4xlarge": {
+        "Arch": "HVM64"
+      },
+      "r3.8xlarge": {
+        "Arch": "HVM64"
+      },
+      "i2.xlarge": {
+        "Arch": "HVM64"
+      },
+      "i2.2xlarge": {
+        "Arch": "HVM64"
+      },
+      "i2.4xlarge": {
+        "Arch": "HVM64"
+      },
+      "i2.8xlarge": {
+        "Arch": "HVM64"
+      },
+      "hi1.4xlarge": {
+        "Arch": "HVM64"
+      },
+      "hs1.8xlarge": {
+        "Arch": "HVM64"
+      },
+      "cr1.8xlarge": {
+        "Arch": "HVM64"
+      },
+      "cc2.8xlarge": {
+        "Arch": "HVM64"
+      }
+    },
+    "AWSRegionArch2AMI": {
+      "us-east-1": {
+        "PV64": "ami-50842d38",
+        "HVM64": "ami-08842d60",
+        "HVMG2": "ami-3a329952"
+      },
+      "us-west-2": {
+        "PV64": "ami-af86c69f",
+        "HVM64": "ami-8786c6b7",
+        "HVMG2": "ami-47296a77"
+      },
+      "us-west-1": {
+        "PV64": "ami-c7a8a182",
+        "HVM64": "ami-cfa8a18a",
+        "HVMG2": "ami-331b1376"
+      },
+      "eu-west-1": {
+        "PV64": "ami-aa8f28dd",
+        "HVM64": "ami-748e2903",
+        "HVMG2": "ami-00913777"
+      },
+      "ap-southeast-1": {
+        "PV64": "ami-20e1c572",
+        "HVM64": "ami-d6e1c584",
+        "HVMG2": "ami-fabe9aa8"
+      },
+      "ap-northeast-1": {
+        "PV64": "ami-21072820",
+        "HVM64": "ami-35072834",
+        "HVMG2": "ami-5dd1ff5c"
+      },
+      "ap-southeast-2": {
+        "PV64": "ami-8b4724b1",
+        "HVM64": "ami-fd4724c7",
+        "HVMG2": "ami-e98ae9d3"
+      },
+      "sa-east-1": {
+        "PV64": "ami-9d6cc680",
+        "HVM64": "ami-956cc688",
+        "HVMG2": "NOT_SUPPORTED"
+      },
+      "cn-north-1": {
+        "PV64": "ami-a857c591",
+        "HVM64": "ami-ac57c595",
+        "HVMG2": "NOT_SUPPORTED"
+      },
+      "eu-central-1": {
+        "PV64": "ami-a03503bd",
+        "HVM64": "ami-b43503a9",
+        "HVMG2": "ami-b03503ad"
+      }
+    }
+  },
+  "Resources": {
+    "SecureHostElasticIp": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc"
+      }
+    },
+    "SecureHostElasticIpAssoc": {
+      "Type": "AWS::EC2::EIPAssociation",
+      "DependsOn": [
+        "SecureHostInstance",
+        "SecureHostElasticIp"
+      ],
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "SecureHostElasticIp",
+            "AllocationId"
+          ]
+        },
+        "InstanceId": {
+          "Ref": "SecureHostInstance"
+        }
+      }
+    },
+    "SecureHostClientSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "DependsOn": [
+        "SecureHostHostSecurityGroup"
+      ],
+      "Properties": {
+        "GroupDescription": "SSH Access to EC2 Instances from Secure Host",
+        "VpcId": {
+          "Ref": "VpcId"
+        },
+        "SecurityGroupIngress": [
+          {
+            "FromPort": "22",
+            "ToPort": "22",
+            "IpProtocol": "tcp",
+            "SourceSecurityGroupId": {
+              "Ref": "SecureHostHostSecurityGroup"
+            }
+          }
+        ]
+      }
+    },
+    "SecureHostHostSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  "SG",
+                  "SecureHost",
+                  "SSH"
+                ]
+              ]
+            }
+          }
+        ],
+        "GroupDescription": "SSH Access to SecureHost",
+        "VpcId": {
+          "Ref": "VpcId"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "ToPort": "22",
+            "FromPort": "22",
+            "CidrIp": {
+              "Ref": "SshAllowCidr"
+            }
+          }
+        ]
+      }
+    },
+    "SecureHostInstance": {
+      "Type": "AWS::EC2::Instance",
+      "DependsOn": [
+        "SecureHostHostSecurityGroup",
+        "SecureHostElasticIp"
+      ],
+      "Properties": {
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "NetworkInterfaces": [
+          {
+            "AssociatePublicIpAddress": "true",
+            "DeleteOnTermination": "true",
+            "Description": "Network interface for Secure Host instance",
+            "DeviceIndex": "0",
+            "GroupSet": [
+              {
+                "Ref": "SecureHostHostSecurityGroup"
+              }
+            ],
+            "SubnetId": {
+              "Ref": "SubnetIdForSecureHost"
+            }
+          }
+        ],
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "ImageId": {
+          "Fn::FindInMap": [
+            "AWSRegionArch2AMI",
+            {
+              "Ref": "AWS::Region"
+            },
+            {
+              "Fn::FindInMap": [
+                "AWSInstanceType2Arch",
+                {
+                  "Ref": "InstanceType"
+                },
+                "Arch"
+              ]
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Ref": "InstanceName"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "SecureHostIp": {
+      "Description": "Public address of SecureHost",
+      "Value": {
+        "Fn::GetAtt": [
+          "SecureHostInstance",
+          "PublicIp"
+        ]
+      }
+    },
+    "SecureHostHostSg": {
+      "Description": "Source SG of SecureHost",
+      "Value": {
+        "Ref": "SecureHostHostSecurityGroup"
+      }
+    },
+    "SecureHostClientSg": {
+      "Description": "Client SG of SecureHost",
+      "Value": {
+        "Ref": "SecureHostClientSecurityGroup"
+      }
+    }
+  }
+}

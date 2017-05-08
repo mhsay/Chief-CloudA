@@ -1,0 +1,507 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+
+	"Description": "This template builds all others",
+
+
+	"Parameters": {
+		"NetworkUrl": {
+			"Default": "https://s3-us-west-2.amazonaws.com/mhsayed/VPC-Config.json",
+			"Description": "VPC resources",
+			"Type": "String"
+		},
+		"SecHostUrl": {
+			"Default": "https://s3-us-west-2.amazonaws.com/mhsayed/SecureHost.json",
+			"Description": "Secure administrative host",
+			"Type": "String"
+		},
+		"DataUrl": {
+			"Default": "https://s3-us-west-2.amazonaws.com/mhsayed/RDS-MySQL.json",
+			"Description": "RDS MySQL Stack",
+			"Type": "String"
+		},
+		"WebUrl": {
+			"Default": "https://s3-us-west-2.amazonaws.com/mhsayed/APP-Server.json",
+			"Description": "Mybb Web Instance Stack",
+			"Type": "String"
+		},
+		"NetworkBlock": {
+			"Description": "VPC Network Block (CIDR)",
+			"Default": "10.0.0.0/20",
+			"MinLength": "9",
+			"MaxLength": "18",
+			"AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+			"Type": "String"
+		},
+		"SubnetBlockD": {
+			"Description": "ublic Subnet Network Block AZ A (CIDR)",
+			"Default": "10.0.0.0/24",
+			"MinLength": "9",
+			"MaxLength": "18",
+			"AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+			"Type": "String"
+		},
+		"SubnetBlockE": {
+			"Description": "Public Subnet Network Block AZ B (CIDR)",
+			"Default": "10.0.1.0/24",
+			"MinLength": "9",
+			"MaxLength": "18",
+			"AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+			"Type": "String"
+		},
+		"SubnetBlockF": {
+			"Description": "Public Subnet Network Block AZ C (CIDR)",
+			"Default": "10.0.2.0/24",
+			"MinLength": "9",
+			"MaxLength": "18",
+			"AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+			"Type": "String"
+		},
+		"SubnetBlockA": {
+			"Description": "Web Tier Subnet Network Block AZ A (CIDR)",
+			"Default": "10.0.3.0/24",
+			"MinLength": "9",
+			"MaxLength": "18",
+			"AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+			"Type": "String"
+		},
+		"SubnetBlockB": {
+			"Description": "Web Tier Subnet Network Block AZ B (CIDR)",
+			"Default": "10.0.4.0/24",
+			"MinLength": "9",
+			"MaxLength": "18",
+			"AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+			"Type": "String"
+		},
+		"SubnetBlockC": {
+			"Description": "Web Tier Subnet Network Block AZ C (CIDR)",
+			"Default": "10.0.5.0/24",
+			"MinLength": "9",
+			"MaxLength": "18",
+			"AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+			"Type": "String"
+		},
+		"SubnetBlockG": {
+			"Description": "Data Subnet Network Block AZ A (CIDR)",
+			"Default": "10.0.6.0/24",
+			"MinLength": "9",
+			"MaxLength": "18",
+			"AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+			"Type": "String"
+		},
+		"SubnetBlockH": {
+			"Description": "Data Subnet Network Block AZ B (CIDR)",
+			"Default": "10.0.7.0/24",
+			"MinLength": "9",
+			"MaxLength": "18",
+			"AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+			"Type": "String"
+		},
+		"SubnetBlockI": {
+			"Description": "Data Subnet Network Block AZ C (CIDR)",
+			"Default": "10.0.8.0/24",
+			"MinLength": "9",
+			"MaxLength": "18",
+			"AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+			"Type": "String"
+		},
+		"DatadogApiKey": {
+			"Default": "1a713ba658695272bc429eb16aef13cd",
+			"Description": "Datadog Agent API Key",
+			"Type": "String"
+		},
+		"KeyName": {
+			"Type": "AWS::EC2::KeyPair::KeyName",
+            "MinLength": "1",
+            "ConstraintDescription" : "Must select a valid SSH Key",
+			"Description": "The SSH key name"
+		},
+		"SecHostInstanceType": {
+			"Description": "SecHost EC2 instance type",
+			"Type": "String",
+			"Default": "t2.micro",
+			"AllowedValues": [
+				"t1.micro",
+				"t2.nano",
+				"t2.micro",
+				"t2.small",
+				"t2.medium",
+				"t2.large",
+				"m1.small",
+				"m1.medium",
+				"m1.large",
+				"m1.xlarge",
+				"m2.xlarge",
+				"m2.2xlarge",
+				"m2.4xlarge",
+				"m3.medium",
+				"m3.large",
+				"m3.xlarge",
+				"m3.2xlarge",
+				"m4.large",
+				"m4.xlarge",
+				"m4.2xlarge",
+				"m4.4xlarge",
+				"m4.10xlarge",
+				"c1.medium",
+				"c1.xlarge",
+				"c3.large",
+				"c3.xlarge",
+				"c3.2xlarge",
+				"c3.4xlarge",
+				"c3.8xlarge",
+				"c4.large",
+				"c4.xlarge",
+				"c4.2xlarge",
+				"c4.4xlarge",
+				"c4.8xlarge",
+				"g2.2xlarge",
+				"g2.8xlarge",
+				"r3.large",
+				"r3.xlarge",
+				"r3.2xlarge",
+				"r3.4xlarge",
+				"r3.8xlarge",
+				"i2.xlarge",
+				"i2.2xlarge",
+				"i2.4xlarge",
+				"i2.8xlarge",
+				"d2.xlarge",
+				"d2.2xlarge",
+				"d2.4xlarge",
+				"d2.8xlarge",
+				"hi1.4xlarge",
+				"hs1.8xlarge",
+				"cr1.8xlarge",
+				"cc2.8xlarge",
+				"cg1.4xlarge"
+			]
+		},
+		"SshAllowCidr": {
+			"Type": "String",
+			"AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+            "ConstraintDescription" : "Must be a valid CIDR range",
+			"Description": "CIDR Range to allow SSH"
+		},
+		"DbInstanceClass": {
+			"Description": "RDS Instance Type",
+			"Type": "String",
+			"Default": "db.t1.micro",
+			"AllowedValues": [
+				"db.t1.micro",
+				"db.m1.small",
+				"db.m1.medium",
+				"db.m1.large",
+				"db.m1.xlarge",
+				"db.m2.xlarge",
+				"db.m2.2xlarge",
+				"db.m2.4xlarge",
+				"db.m3.medium",
+				"db.m3.large",
+				"db.m3.xlarge",
+				"db.m3.2xlarge",
+				"db.m4.large",
+				"db.m4.xlarge",
+				"db.m4.2xlarge",
+				"db.m4.4xlarge",
+				"db.m4.10xlarge",
+				"db.r3.large",
+				"db.r3.xlarge",
+				"db.r3.2xlarge",
+				"db.r3.4xlarge",
+				"db.r3.8xlarge",
+				"db.m2.xlarge",
+				"db.m2.2xlarge",
+				"db.m2.4xlarge",
+				"db.cr1.8xlarge",
+				"db.t2.micro",
+				"db.t2.small",
+				"db.t2.medium",
+				"db.t2.large"
+			]
+		},
+		"DbAllocatedStorage": {
+			"Default": "5",
+			"Description": "DB Size in GB",
+			"Type": "Number",
+			"MinValue": "5",
+			"MaxValue": "1024"
+		},
+		"MasterUsername": {
+			"Default": "dbadmin",
+			"Description": "Database Admin Username",
+			"Type": "String",
+			"MinLength": "1",
+			"MaxLength": "16",
+			"AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*"
+		},
+		"MasterPassword": {
+			"NoEcho": "true",
+			"Description": "Database Admin Password",
+			"Type": "String",
+			"MinLength": "8",
+			"MaxLength": "41",
+            "ConstraintDescription" : "Must follow pattern [a-zA-Z0-9]+ and be atleast 8 chars",
+			"AllowedPattern": "[a-zA-Z0-9]+"
+		},
+		"WebInstanceType": {
+			"Description": "Web Tier EC2 instance type",
+			"Type": "String",
+			"Default": "t2.micro",
+			"AllowedValues": [
+				"t1.micro",
+				"t2.nano",
+				"t2.micro",
+				"t2.small",
+				"t2.medium",
+				"t2.large",
+				"m1.small",
+				"m1.medium",
+				"m1.large",
+				"m1.xlarge",
+				"m2.xlarge",
+				"m2.2xlarge",
+				"m2.4xlarge",
+				"m3.medium",
+				"m3.large",
+				"m3.xlarge",
+				"m3.2xlarge",
+				"m4.large",
+				"m4.xlarge",
+				"m4.2xlarge",
+				"m4.4xlarge",
+				"m4.10xlarge",
+				"c1.medium",
+				"c1.xlarge",
+				"c3.large",
+				"c3.xlarge",
+				"c3.2xlarge",
+				"c3.4xlarge",
+				"c3.8xlarge",
+				"c4.large",
+				"c4.xlarge",
+				"c4.2xlarge",
+				"c4.4xlarge",
+				"c4.8xlarge",
+				"g2.2xlarge",
+				"g2.8xlarge",
+				"r3.large",
+				"r3.xlarge",
+				"r3.2xlarge",
+				"r3.4xlarge",
+				"r3.8xlarge",
+				"i2.xlarge",
+				"i2.2xlarge",
+				"i2.4xlarge",
+				"i2.8xlarge",
+				"d2.xlarge",
+				"d2.2xlarge",
+				"d2.4xlarge",
+				"d2.8xlarge",
+				"hi1.4xlarge",
+				"hs1.8xlarge",
+				"cr1.8xlarge",
+				"cc2.8xlarge",
+				"cg1.4xlarge"
+			]
+		},
+		"ServerCount": {
+			"Type": "String",
+            "Default": "1",
+			"Description": "Amount of instances to set initial scaling group to"
+		},
+		"WebHttpsAllowCidr": {
+			"Description": "Network block (CIDR) to allow HTTPS access for application, Default: World.",
+			"Default": "0.0.0.0/0",
+			"MinLength": "9",
+			"MaxLength": "18",
+			"AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+			"Type": "String"
+		},
+		"AdminEmail": {
+			"Type": "String",
+			"Default": "Admin@company.com",
+			"Description": "Email Address of Administrator"
+		}
+	},
+
+	"Resources": {
+		"NetworkStack": {
+			"Type": "AWS::CloudFormation::Stack",
+			"Properties": {
+				"Parameters": {
+					"NetworkBlock": {
+						"Ref": "NetworkBlock"
+					},
+					"SubnetBlockA": {
+						"Ref": "SubnetBlockA"
+					},
+					"SubnetBlockB": {
+						"Ref": "SubnetBlockB"
+					},
+					"SubnetBlockC": {
+						"Ref": "SubnetBlockC"
+					},
+					"SubnetBlockD": {
+						"Ref": "SubnetBlockD"
+					},
+					"SubnetBlockE": {
+						"Ref": "SubnetBlockE"
+					},
+					"SubnetBlockF": {
+						"Ref": "SubnetBlockF"
+					},
+					"SubnetBlockG": {
+						"Ref": "SubnetBlockG"
+					},
+					"SubnetBlockH": {
+						"Ref": "SubnetBlockH"
+					},
+					"SubnetBlockI": {
+						"Ref": "SubnetBlockI"
+					}
+				},
+				"TemplateURL": {
+					"Ref": "NetworkUrl"
+				},
+				"TimeoutInMinutes": 15
+			}
+		},
+		"SecHostStack": {
+			"DependsOn": ["NetworkStack"],
+			"Type": "AWS::CloudFormation::Stack",
+			"Properties": {
+				"Parameters": {
+					"InstanceType": {
+						"Ref": "SecHostInstanceType"
+					},
+					"KeyName": {
+						"Ref": "KeyName"
+					},
+					"SubnetIdForSecHost": {
+						"Fn::GetAtt": ["NetworkStack", "Outputs.PubSubA"]
+					},
+					"VpcId": {
+						"Fn::GetAtt": ["NetworkStack", "Outputs.VpcId"]
+					},
+					"SshAllowCidr": {
+						"Ref": "SshAllowCidr"
+					}
+				},
+				"TemplateURL": {
+					"Ref": "SecHostUrl"
+				},
+				"TimeoutInMinutes": 15
+			}
+		},
+		"DataStack": {
+			"DependsOn": ["SecHostStack"],
+			"Type": "AWS::CloudFormation::Stack",
+			"Properties": {
+				"Parameters": {
+					"DbInstanceClass": {
+						"Ref": "DbInstanceClass"
+					},
+					"DbAllocatedStorage": {
+						"Ref": "DbAllocatedStorage"
+					},
+					"DataSubnetIds": {"Fn::Join" : [ ",", [{ "Fn::GetAtt": ["NetworkStack", "Outputs.PrivSubD"]},
+                    { "Fn::GetAtt": ["NetworkStack", "Outputs.PrivSubE"]},
+                      { "Fn::GetAtt": ["NetworkStack", "Outputs.PrivSubF"]}]] },
+
+					"VpcId": {
+						"Fn::GetAtt": ["NetworkStack", "Outputs.VpcId"]
+					},
+					"MasterUsername": {
+						"Ref": "MasterUsername"
+					},
+					"MasterPassword": {
+						"Ref": "MasterPassword"
+					}
+				},
+				"TemplateURL": {
+					"Ref": "DataUrl"
+				},
+				"TimeoutInMinutes": 15
+			}
+		},
+		"WebStack": {
+			"Type": "AWS::CloudFormation::Stack",
+			"DependsOn": ["DataStack"],
+			"Properties": {
+				"Parameters": {
+					"InstanceType": {
+						"Ref": "WebInstanceType"
+					},
+					"KeyName": {
+						"Ref": "KeyName"
+					},
+					"ServerCount": {
+						"Ref": "ServerCount"
+					},
+					"WebSubnetIds": {"Fn::Join" : [ ",", [{ "Fn::GetAtt": ["NetworkStack", "Outputs.PrivSubA"]},
+                    { "Fn::GetAtt": ["NetworkStack", "Outputs.PrivSubB"]},
+                      { "Fn::GetAtt": ["NetworkStack", "Outputs.PrivSubC"]}]] },
+                    "PublicSubnetIds": {"Fn::Join" : [ ",", [{ "Fn::GetAtt": ["NetworkStack", "Outputs.PubSubA"]},
+                    { "Fn::GetAtt": ["NetworkStack", "Outputs.PubSubB"]},
+                      { "Fn::GetAtt": ["NetworkStack", "Outputs.PubSubC"]}]] },
+					"VpcId": {
+						"Fn::GetAtt": ["NetworkStack", "Outputs.VpcId"]
+					},
+					"WebHttpsAllowCidr": {
+						"Ref": "WebHttpsAllowCidr"
+					},
+					"SshSecurityGroup": {
+						"Fn::GetAtt": ["SecHostStack", "Outputs.SecHostClientSg"]
+					},
+					"DbSecurityGroup": {
+						"Fn::GetAtt": ["DataStack", "Outputs.DbSecurityGroup"]
+					},
+					"DbHost": {
+						"Fn::GetAtt": ["DataStack", "Outputs.RdsEndpoint"]
+					},
+					"DbUser": {
+						"Ref": "MasterUsername"
+					},
+					"DbPass": {
+						"Ref": "MasterPassword"
+					},
+					"AdminEmail": {
+						"Ref": "AdminEmail"
+					},
+					"DatadogApiKey": {
+						"Ref": "DatadogApiKey"
+					}
+				},
+				"TemplateURL": {
+					"Ref": "WebUrl"
+				},
+				"TimeoutInMinutes": 15
+			}
+		}
+	},
+	"Outputs": {
+		"ApplicationEndpoint": {
+			"Description": "Application Endpoint",
+			"Value": {
+				"Fn::GetAtt": ["WebStack", "Outputs.DnsName"]
+			}
+		},
+      "NetworkStackOut": {
+			"Description": "Network Stack ID",
+			"Value": {"Ref": "NetworkStack"}
+		},
+      "SecHostStackOut": {
+			"Description": "Jump Box Stack ID",
+			"Value": { "Ref": "SecHostStack" }
+		},
+      "DataStackOut": {
+			"Description": "Data Stack ID",
+			"Value": { "Ref": "DataStack" }
+		},
+      "WebStackOut": {
+			"Description": "Web Stack ID",
+			"Value": { "Ref": "WebStack" }
+		}
+		}
+	}

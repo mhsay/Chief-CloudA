@@ -1,0 +1,6 @@
+default['mybb']['deployment_path'] = '/var/www/html'
+default['mybb']['deployment_path_inc'] = '/var/www/html/inc'
+default['mybb']['temporary_artifact'] = '/tmp/mybb_1809.zip'
+default['mybb']['upload_folder'] = '/tmp/Upload'
+default['mybb']['download_path'] = 'https://resources.mybb.com/downloads/mybb_1809.zip'
+default['mybb']['schema_file'] = '/tmp/schema.sql'

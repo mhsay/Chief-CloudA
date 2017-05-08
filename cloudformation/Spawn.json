@@ -452,7 +452,7 @@
 						"Ref": "WebHttpsAllowCidr"
 					},
 					"SshSecurityGroup": {
-						"Fn::GetAtt": ["SecureHostStack", "Outputs.SecHostClientSg"]
+						"Fn::GetAtt": ["SecureHostStack", "Outputs.SecureHostClientSg"]
 					},
 					"DbSecurityGroup": {
 						"Fn::GetAtt": ["RDSMStack", "Outputs.DbSecurityGroup"]

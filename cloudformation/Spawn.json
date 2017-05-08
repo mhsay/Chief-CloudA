@@ -6,22 +6,22 @@
 
 	"Parameters": {
 		"NetworkUrl": {
-			"Default": "https://s3-us-west-2.amazonaws.com/mhsayed/VPC-Config.json",
+			"Default": "https://s3.ap-south-1.amazonaws.com/mhsayed/VPC-Config.json",
 			"Description": "VPC resources",
 			"Type": "String"
 		},
 		"SecHostUrl": {
-			"Default": "https://s3-us-west-2.amazonaws.com/mhsayed/SecureHost.json",
+			"Default": "https://s3.ap-south-1.amazonaws.com/mhsayed/SecureHost.json",
 			"Description": "Secure administrative host",
 			"Type": "String"
 		},
 		"DataUrl": {
-			"Default": "https://s3-us-west-2.amazonaws.com/mhsayed/RDS-MySQL.json",
+			"Default": "https://s3.ap-south-1.amazonaws.com/mhsayed/RDS-MySQL.json",
 			"Description": "RDS MySQL Stack",
 			"Type": "String"
 		},
 		"WebUrl": {
-			"Default": "https://s3-us-west-2.amazonaws.com/mhsayed/APP-Server.json",
+			"Default": "https://s3.ap-south-1.amazonaws.com/mhsayed/APP-Server.json",
 			"Description": "Mybb Web Instance Stack",
 			"Type": "String"
 		},
